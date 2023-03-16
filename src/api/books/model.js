@@ -9,6 +9,7 @@ const booksSchema = new Schema(
     img: { type: String, required: true },
     price: { type: Number, required: true },
     category: { type: String, required: true, enum: ["history", "romance", "horror", "fantasy"] },
+    authors: [{ type: Schema.Types.ObjectId, ref: "Author" }],
   },
   { timestamps: true }
 )

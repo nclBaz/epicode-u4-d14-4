@@ -1,4 +1,5 @@
 import express from "express"
+import createHttpError from "http-errors"
 import q2m from "query-to-mongo"
 import BooksModel from "./model.js"
 
@@ -6,6 +7,9 @@ const booksRouter = express.Router()
 
 booksRouter.post("/", async (req, res, next) => {
   try {
+    const newBook = new BooksModel(req.body)
+    const { _id } = await newBook.save()
+    res.status(201).send({ _id })
   } catch (error) {
     next(error)
   }
@@ -21,6 +25,7 @@ booksRouter.get("/", async (req, res, next) => {
       .limit(mongoQuery.options.limit)
       .skip(mongoQuery.options.skip)
       .sort(mongoQuery.options.sort)
+      .populate({ path: "authors", select: "firstName lastName" })
     const total = await BooksModel.countDocuments(mongoQuery.criteria)
     // no matter the order of usage of these methods, Mongo will ALWAYS apply SORT then SKIP then LIMIT
     res.send({
@@ -36,6 +41,12 @@ booksRouter.get("/", async (req, res, next) => {
 
 booksRouter.get("/:bookId", async (req, res, next) => {
   try {
+    const book = await BooksModel.findById(req.params.bookId).populate({ path: "authors", select: "firstName lastName" })
+    if (book) {
+      res.send(book)
+    } else {
+      next(createHttpError(404, `Book with id ${req.params.bookId} not found!`))
+    }
   } catch (error) {
     next(error)
   }
